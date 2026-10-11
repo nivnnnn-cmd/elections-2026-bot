@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head><meta charset="utf-8"><title>בדיקות החישוב</title>
+<style>body{font-family:Arial,sans-serif;max-width:800px;margin:20px auto;padding:0 16px;line-height:1.6;background:#fff;color:#111}
+.ok{color:#1d7a3e}.bad{color:#b3261e;font-weight:bold}</style></head>
+<body>
+<h1>בדיקות החישוב של הבוט</h1>
+<p>הדף משווה את score.js לחישוב הביקורת ב-Python (tools/score_reference.py), ובודק כמה כללים.</p>
+<ul id="out"></ul>
+<script src="score.js"></script>
+<script>
+(async () => {
+  const out = document.getElementById('out');
+  const results = [];
+  const check = (name, ok, extra = '') => { results.push(ok); out.insertAdjacentHTML('beforeend', `<li class="${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'} ${name} ${extra}</li>`); };
+  const load = f => fetch(f).then(r => r.json());
+  const [qd, votes, parties, fx] = await Promise.all([load('data/questions.json'), load('data/votes.json'), load('data/parties.json'), load('tests/fixtures.json')]);
+  const Q = qd.votes, byId = Object.fromEntries(votes.map(v => [v.id, v]));
+  const pos = {};
+  for (const p of parties) { pos[p.name] = {}; for (const q of Q) pos[p.name][q.id] = Score.partyPosition(byId[q.id].parties[p.name]); }
+
+  // 1. העמדות של המפלגות זהות בשני החישובים
+  let same = true;
+  for (const p of parties) for (const q of Q) if ((pos[p.name][q.id] ?? null) !== (fx.positions[p.name][q.id] ?? null)) same = false;
+  check('העמדה של כל מפלגה בכל הצבעה זהה בשני החישובים', same);
+
+  // 2. האחוזים זהים לחישוב הביקורת בכל המשתמשים המדומים
+  let mism = 0;
+  for (const c of fx.cases) for (const p of parties) {
+    const exp = c.expected[p.name];
+    if (exp === null) continue;
+    const got = Score.scoreParty(Q, c.answers, pos[p.name], c.important);
+    if (got.percent !== exp.percent || got.count !== exp.count || got.points !== exp.points || got.max !== exp.max
+      || got.decided !== exp.decided || got.same !== exp.same) mism++;
+  }
+  check(`האחוזים זהים לחישוב הביקורת (${fx.cases.length} משתמשים מדומים × ${parties.length} מפלגות)`, mism === 0, mism ? `(${mism} הבדלים)` : '');
+
+  // 3. מי שעונה בדיוק כמו מפלגה מקבל לה 100%, והיא בקבוצה הראשונה
+  for (const p of parties) {
+    const known = Q.filter(q => ['for', 'against'].includes(pos[p.name][q.id]));
+    if (known.length < Score.MIN_COMMON) { check(`${p.name}: אין מספיק הצבעות עם עמדה (${known.length}), לא נבדק`, true); continue; }
+    const ans = {}; for (const q of Q) ans[q.id] = known.includes(q) ? pos[p.name][q.id] : 'skip';
+    const res = parties.map((x, i) => ({ name: x.name, ballotIndex: i, ...Score.scoreParty(Q, ans, pos[x.name], []) }));
+    const me = res.find(r => r.name === p.name);
+    // המשתמש ענה רק על ההצבעות שבהן המפלגה בחרה צד, ולכן היא אמורה לקבל 100%
+    const { groups } = Score.rank(res);
+    const top = groups[0].parties.map(r => r.name);
+    check(`${p.name}: מי שעונה כמוה מקבל ${me.percent}% ומגיע למקום הראשון`, me.percent === 100 && top.includes(p.name),
+      top.length > 1 ? `(תיקו עם: ${top.filter(n => n !== p.name).join(', ')})` : '');
+  }
+
+  // 3א. בעיית המדגם הקטן: מפלגה שבחרה צד רק ב-8 הצבעות והסכימה בכולן לא מקבלת 100%,
+  //     ומקבלת פחות ממפלגה שבחרה צד בכולן וטעתה רק ב-3
+  {
+    const n = Q.length, fakePos = {}, ans = {};
+    Q.forEach((q, i) => { ans[q.id] = 'for'; fakePos[q.id] = i < 8 ? 'for' : 'none'; });
+    const small = Score.scoreParty(Q, ans, fakePos, []);
+    const bigPos = {}; Q.forEach((q, i) => { bigPos[q.id] = i < n - 3 ? 'for' : 'against'; });
+    const big = Score.scoreParty(Q, ans, bigPos, []);
+    const expSmall = Math.floor((8 + 0.5 * (n - 8)) / n * 100 + 0.5), expBig = Math.floor((n - 3) / n * 100 + 0.5);
+    check(`מדגם קטן: 8 הסכמות מתוך 8 שבהן בחרה צד (ו-${n - 8} בלי צד) מקבלת ${small.percent}%, פחות ממפלגה עם ${n - 3} הסכמות מתוך ${n} (${big.percent}%)`,
+      small.percent === expSmall && big.percent === expBig && small.percent < big.percent);
+  }
+
+  // 3ב. לכל המפלגות שהיו בכנסת יש אותו מכנה (אותן הצבעות בדיוק)
+  {
+    let ok = true;
+    for (const c of fx.cases) {
+      const maxes = new Set(parties.filter(p => c.expected[p.name] !== null)
+        .map(p => Score.scoreParty(Q, c.answers, pos[p.name], c.important).max));
+      if (maxes.size > 1) ok = false;
+    }
+    check('לכל המפלגות שהיו בכנסת יש אותו מכנה, בכל המשתמשים המדומים', ok);
+  }
+
+  // 4. "לא יודע" על הכול: אין תשובות, אין אחוזים
+  const none = {}; for (const q of Q) none[q.id] = 'skip';
+  check('מי שעונה "לא יודע" על הכול לא מקבל אחוז לאף מפלגה',
+    Score.countAnswered(none) === 0 && parties.every(p => Score.scoreParty(Q, none, pos[p.name], []).percent === null));
+
+  // 5. סדר השאלות לא משנה את התוצאה
+  const rev = [...Q].reverse(), c0 = fx.cases[0];
+  check('סדר השאלות לא משנה את התוצאה', parties.every(p =>
+    JSON.stringify(Score.scoreParty(Q, c0.answers, pos[p.name], c0.important)) === JSON.stringify(Score.scoreParty(rev, c0.answers, pos[p.name], c0.important))));
+
+  // 7. שאלות העמדה (שלב 2): בודקים על עמדות מומצאות, כי הכלל צריך לעבוד לכל עמדה שהיא
+  {
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647; // אקראי, אבל אותו דבר בכל הרצה
+    const ST = Array.from({ length: 6 }, (_, i) => ({ id: 's' + (i + 1), topic: 'x' }));
+    const STANCES = ['agree', 'disagree', 'middle', 'none'];
+    let jumps = 0, voteOrderKept = true, slotsKept = true, mirrorFirst = 0, mirrorCases = 0;
+    for (const c of fx.cases) {
+      const stPos = {}; for (const p of parties) { stPos[p.name] = {}; for (const x of ST) stPos[p.name][x.id] = STANCES[Math.floor(rnd() * 4)]; }
+      const userSt = {}; for (const x of ST) userSt[x.id] = ['agree', 'middle', 'disagree', 'skip'][Math.floor(rnd() * 4)];
+      const ans = { ...c.answers, ...userSt };
+      const mk = a => parties.filter(p => c.expected[p.name] !== null).map((p, i) => ({ name: p.name, ballotIndex: i,
+        ...Score.scoreParty(Q, a, pos[p.name], c.important), stmt: Score.scoreStatements(ST, a, stPos[p.name]) }));
+      const res = mk(ans), one = Score.oneAnswerPercent(res);
+      const flat = Score.rankWithStatements(res, one).clusters.flatMap(k => k.parties);
+      // א. אף מפלגה לא עוקפת מפלגה שהצביעה כמוך ביותר מתשובה אחת
+      for (let i = 0; i < flat.length; i++) for (let j = i + 1; j < flat.length; j++) if (flat[j].percent - flat[i].percent >= one) jumps++;
+      // ב. בלי תשובות לשאלות העמדה, הסדר זהה לסדר לפי ההצבעות
+      const noSt = mk(c.answers);
+      const a = Score.rankWithStatements(noSt, one).clusters.flatMap(k => k.parties).map(r => r.name);
+      const b = [...noSt].sort((x, y) => y.percent - x.percent || x.ballotIndex - y.ballotIndex).map(r => r.name);
+      if (a.join() !== b.join()) voteOrderKept = false;
+      // ג. מפלגה בלי מספיק עמדות נשארת בדיוק במקום שלה לפי ההצבעות
+      for (const k of Score.rankWithStatements(res, one).clusters) {
+        const byVotes = [...k.parties].sort((x, y) => y.percent - x.percent || x.ballotIndex - y.ballotIndex);
+        k.parties.forEach((r, i) => { if (r.stmt.share === null && byVotes[i] !== r) slotsKept = false; });
+      }
+      // ד. מי שעונה בשאלות העמדה בדיוק כמו מפלגה, מקבל אותה ראשונה בתוך הקבוצה הצמודה שלה (אם יש לה עמדה בכולן)
+      const k0 = Score.rankWithStatements(res, one).clusters.find(k => k.parties.length > 1);
+      if (k0) {
+        const target = k0.parties[k0.parties.length - 1].name;
+        if (ST.every(x => ['agree', 'middle', 'disagree'].includes(stPos[target][x.id]))) {
+          mirrorCases++;
+          const mirror = { ...c.answers }; for (const x of ST) mirror[x.id] = stPos[target][x.id];
+          const k1 = Score.rankWithStatements(mk(mirror), one).clusters.find(k => k.parties.some(r => r.name === target));
+          // מפלגות בלי מספיק עמדות נשארות במקום שלהן לפי ההצבעות (כלל ג), ולכן בודקים את הסדר רק בין המפלגות שהשאלות מסדרות
+          const ranked = k1.parties.filter(r => r.stmt.share !== null);
+          if (ranked[0].name === target || ranked.find(r => r.name === target).stmt.share === ranked[0].stmt.share) mirrorFirst++;
+        }
+      }
+    }
+    // ה. החישוב של שאלה אחת: אותה תשובה = 1, צעד אחד = חצי, הפוך = 0, "לא פרסמה" = לא נספר
+    const one = (u, p) => Score.scoreStatements([{ id: 'q' }], { q: u }, { q: p });
+    check('שאלת עמדה: אותה תשובה = נקודה, צעד אחד הבדל = חצי, הפוך = 0, "לא פרסמה עמדה" לא נספר',
+      one('agree', 'agree').points === 1 && one('middle', 'middle').points === 1 && one('middle', 'agree').points === 0.5
+      && one('disagree', 'middle').points === 0.5 && one('agree', 'disagree').points === 0
+      && one('agree', 'none').count === 0 && one('skip', 'agree').answered === 0);
+    check('שאלות העמדה אף פעם לא מקפיצות מפלגה מעל מפלגה שהצביעה כמוך ביותר מתשובה אחת', jumps === 0, jumps ? `(${jumps} מקרים)` : '');
+    check('בלי תשובות לשאלות העמדה, הסדר זהה לסדר לפי ההצבעות', voteOrderKept);
+    check('מפלגה בלי מספיק עמדות נשארת במקום שלה לפי ההצבעות', slotsKept);
+    check(`מי שעונה בשאלות העמדה כמו מפלגה, מקבל אותה ראשונה מבין המפלגות שהשאלות מסדרות בקבוצה הצמודה שלה (${mirrorFirst} מתוך ${mirrorCases})`, mirrorCases > 0 && mirrorFirst === mirrorCases);
+  }
+
+  // 7א. הצגת חמש המפלגות הראשונות בלבד
+  {
+    const mkc = sizes => sizes.map((n, i) => ({ parties: Array.from({ length: n }, (_, j) => ({ name: `${i}-${j}` })) }));
+    const names = (sizes, n) => Score.topClusters(mkc(sizes), n).flatMap(k => k.parties.map(r => r.name));
+    check('חמש המפלגות הראשונות: בדיוק 5 גם כשהגבול נופל באמצע קבוצה צמודה, ובסדר המקורי',
+      names([1, 2, 5], 5).join() === '0-0,1-0,1-1,2-0,2-1' && names([3, 3], 5).length === 5
+      && names([2, 3], 5).length === 5 && names([1, 1], 5).length === 2 && names([], 5).length === 0);
+  }
+
+  // 8. שאלת הבסיס (מדינת הלאום)
+  {
+    const core = await load('data/core.json');
+    const LV = ['agree', 'neutral', 'disagree', 'strongly_disagree', 'skip'];
+    const cr = (u, p) => Score.coreCredit(u, p), third = 2 / 3;
+    const near = (a, b) => Math.abs(a - b) < 1e-9;
+    check('שאלת הבסיס: אותה תשובה = הכול, דרגה אחת = שני שלישים, שתי דרגות ומעלה = 0',
+      cr('agree', 'agree') === 1 && cr('strongly_disagree', 'strongly_disagree') === 1
+      && near(cr('agree', 'neutral'), third) && near(cr('neutral', 'disagree'), third) && near(cr('disagree', 'strongly_disagree'), third)
+      && cr('agree', 'disagree') === 0 && cr('agree', 'strongly_disagree') === 0 && cr('neutral', 'strongly_disagree') === 0);
+    let fifth = true, neverUp = true, sameNeverDown = true, skipSame = true, wrongPct = 0, n = 0;
+    for (const c of fx.cases) for (const p of parties) {
+      if (c.expected[p.name] === null) continue;
+      const base = Score.scoreParty(Q, c.answers, pos[p.name], c.important);
+      if (base.percent === null) continue;
+      for (const u of LV) for (const pp of LV.slice(0, 4)) {
+        const r = Score.applyCore(base, u, pp); n++;
+        if (u === 'skip') { if (r.percent !== base.percent || r.max !== base.max || r.core !== null) skipSame = false; continue; }
+        // השאלה שווה בדיוק חמישית מהמקסימום החדש, גם עם נושאים חשובים
+        if (!near(r.core.max / r.max, 0.2)) fifth = false;
+        // מחלוקת אמיתית (שתי דרגות ומעלה) אף פעם לא מעלה את האחוז
+        if (r.core.gap >= 2 && r.percent > base.percent) neverUp = false;
+        // אותה תשובה אף פעם לא מורידה את האחוז
+        if (r.core.gap === 0 && r.percent < base.percent) sameNeverDown = false;
+        const exp = Math.floor((base.points + base.max / 4 * cr(u, pp)) / (base.max + base.max / 4) * 100 + 0.5);
+        if (r.percent !== exp) wrongPct++;
+      }
+    }
+    check(`השאלה שווה חמישית מהתוצאה אצל כולם, גם עם נושאים חשובים (${n} צירופים)`, fifth);
+    check('מחלוקת של שתי דרגות ומעלה אף פעם לא מעלה את האחוז', neverUp);
+    check('אותה תשובה כמו המפלגה אף פעם לא מורידה את האחוז', sameNeverDown);
+    check('"לא יודע/ת" בשאלת הבסיס לא משנה כלום', skipSame);
+    check('האחוז אחרי השאלה זהה לחישוב בנפרד', wrongPct === 0, wrongPct ? `(${wrongPct} הבדלים)` : '');
+    // מפלגה בלי אחוז נשארת בלי אחוז
+    check('מפלגה בלי אחוז נשארת בלי אחוז גם אחרי שאלת הבסיס', Score.applyCore({ percent: null, points: 0, max: 0 }, 'agree', 'agree').percent === null);
+    // הנתונים: לכל מפלגה יש עמדה תקינה, ציטוט וקישור
+    const okData = parties.every(p => { const e = core.positions[p.name];
+      return e && e.position in Score.CORE_RANK && e.quote && /^https?:\/\//.test(e.url) && e.date && e.speaker; });
+    check(`בנתוני שאלת הבסיס לכל ${parties.length} המפלגות יש דרגה תקינה, ציטוט, תאריך וקישור`, okData);
+  }
+
+  // 6. כמה הצבעות עם עמדה יש לכל מפלגה קיימת
+  const counts = parties.map(p => `${p.name}: ${Q.filter(q => ['for', 'against'].includes(pos[p.name][q.id])).length}`).join(' · ');
+  check('מספר ההצבעות עם עמדה לכל מפלגה (מתוך ' + Q.length + ')', true, `<br><small>${counts}</small>`);
+
+  document.title = results.every(Boolean) ? 'בדיקות: הכול עבר' : 'בדיקות: יש כשלונות';
+  out.insertAdjacentHTML('beforeend', `<li><b>${results.every(Boolean) ? 'כל הבדיקות עברו' : 'יש בדיקות שנכשלו'}</b></li>`);
+})();
+</script>
+</body></html>

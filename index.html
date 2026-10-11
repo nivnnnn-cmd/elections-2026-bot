@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>אמרו · הצביעו</title>
+<meta name="description" content="הצביעו בעצמכם על הצעות אמיתיות מהכנסת, וגלו אילו מפלגות הצביעו הכי דומה לכם.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=39">
+</head>
+<body class="blind">
+<header class="top"><div class="wrap">
+  <div class="top-row">
+    <div class="logo"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12l4.5 4.5L19 7"/></svg></span><span>אמרו · הצביעו <small>בחירות 2026</small></span></div>
+    <div class="count" id="count"></div>
+  </div>
+  <div id="topProgress">
+    <div class="pbar"><i id="pfill"></i></div>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <div id="chat" aria-live="polite"></div>
+  <div id="results" class="results" hidden></div>
+</main>
+<div class="dock" id="dock"><div class="wrap" id="actions"></div></div>
+
+<script src="score.js?v=39"></script>
+<script src="app.js?v=39"></script>
+</body>
+</html>

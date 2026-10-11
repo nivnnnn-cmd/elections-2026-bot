@@ -1,0 +1,228 @@
+/* צבעים: כחול כהה ורשמי כצבע ראשי. "בעד" ו"נגד" באותו צבע בכוונה */
+:root{
+  --bg:#f6f5f2; --card:#ffffff; --ink:#1c1c1c; --text:#3a3a3a; --muted:#5d5d5d; --line:#e3e1dc;
+  --accent:#27566b; --accent-2:#2f6f8f; --accent-soft:#e3eef3; --on-accent:#ffffff; --track:#e1e7ea;
+  --bot:#ffffff; --user:#27566b; --on-user:#ffffff; --soft-line:#d3d0c9;
+  --warn-bg:#fff4e0; --warn-line:#e0a64a; --warn-ink:#5a3a08; --ok:#2d7a4b; --bad:#a3452d;
+  /* צבעי קישוט בלבד: טורקיז וענבר. לא קשורים לאף מפלגה */
+  --teal:#34a4a0; --warm:#e8a04a; --warm-ink:#4a2d05; --glow-a:rgba(232,160,74,.30); --glow-b:rgba(47,111,143,.22);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .msg .topic{--tc:hsl(var(--h) 80% 76%);--tb:hsl(var(--h) 40% 22%)}
+  :root:not([data-theme="light"]){
+    --bg:#141516; --card:#1e2022; --ink:#ececec; --text:#d4d4d4; --muted:#a6a6a6; --line:#34373a;
+    --accent:#8ec3d9; --accent-2:#5aa3c4; --accent-soft:#1f3139; --on-accent:#10232b; --track:#34373a;
+    --bot:#1e2022; --user:#2d6a84; --on-user:#ffffff; --soft-line:#44474a;
+    --warn-bg:#35291a; --warn-line:#b9853a; --warn-ink:#f3d29a; --ok:#6cc08c; --bad:#f0997b;
+    --teal:#6fd0c4; --warm:#f0b565; --warm-ink:#3a2204; --glow-a:rgba(240,181,101,.14); --glow-b:rgba(90,163,196,.18);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"] .msg .topic{--tc:hsl(var(--h) 80% 76%);--tb:hsl(var(--h) 40% 22%)}
+:root[data-theme="dark"]{
+  --bg:#141516; --card:#1e2022; --ink:#ececec; --text:#d4d4d4; --muted:#a6a6a6; --line:#34373a;
+  --accent:#8ec3d9; --accent-2:#5aa3c4; --accent-soft:#1f3139; --on-accent:#10232b; --track:#34373a;
+  --bot:#1e2022; --user:#2d6a84; --on-user:#ffffff; --soft-line:#44474a;
+  --warn-bg:#35291a; --warn-line:#b9853a; --warn-ink:#f3d29a; --ok:#6cc08c; --bad:#f0997b;
+  --teal:#6fd0c4; --warm:#f0b565; --warm-ink:#3a2204; --glow-a:rgba(240,181,101,.14); --glow-b:rgba(90,163,196,.18);
+  color-scheme:dark;
+}
+/* עקומות תנועה: "יציאה" רכה, וקפיץ עדין למי שזז עם תנופה */
+:root{--ease:cubic-bezier(.22,1,.36,1);--spring:linear(0,.34 8%,.8 20%,1.04 32%,1.07 40%,1.02 56%,.995 72%,1)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:radial-gradient(760px 380px at 92% -90px,var(--glow-a),transparent 70%),radial-gradient(820px 420px at 4% -110px,var(--glow-b),transparent 70%),var(--bg);background-repeat:no-repeat;color:var(--ink);font-family:Assistant,Arial,sans-serif;font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:var(--accent)}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px}
+.ic{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em;flex:none}
+
+/* פס עליון, עם פס התקדמות */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--card) 74%,transparent);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:12px;height:48px}
+/* כשהדף גולל: הקו הדק נעלם, ובמקומו התוכן שעובר מתחת לפס מטשטש בהדרגה */
+.top{transition:border-color .25s ease}
+.top::after{content:"";position:absolute;left:0;right:0;top:100%;height:22px;pointer-events:none;opacity:0;transition:opacity .25s ease;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  -webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent)}
+.top.scrolled{border-bottom-color:transparent}
+.top.scrolled::after{opacity:1}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:18px;letter-spacing:-.01em}
+.logo-mark{width:26px;height:26px;border-radius:8px;flex:none;display:grid;place-items:center;color:var(--warm-ink);background:linear-gradient(135deg,var(--warm),#f3c27a);box-shadow:0 4px 10px -4px color-mix(in srgb,var(--warm) 80%,transparent)}
+.logo-mark svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.logo small{font-weight:400;color:var(--muted);font-size:14px;margin-right:6px}
+.count{font-size:14px;color:var(--muted)}
+#topProgress{padding-bottom:10px}
+.pbar{height:6px;background:var(--track);border-radius:99px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:linear-gradient(to left,var(--accent-2),var(--teal));border-radius:99px;transition:width .7s var(--ease)}
+.count .special{color:var(--accent-2);animation:fadein .3s ease-out}
+
+/* צ'אט */
+#chat{padding:16px 0 220px} /* הרווח בתחתית מתעדכן לפי גובה הכפתורים, ב-app.js */
+.msg{max-width:88%;margin:10px 0;padding:12px 16px;border-radius:18px;scroll-margin-top:100px}
+/* רק הודעה חדשה מקבלת אנימציה. backwards = מוסתרת עד שהאנימציה שלה מתחילה */
+.msg.enter{animation:pop .6s var(--spring) backwards}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+.dock .wrap.enter{animation:fadein .3s ease-out .15s backwards}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.msg.bot{background:var(--bot);border:1px solid var(--line);border-top-right-radius:6px;margin-left:auto;color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 18px -8px rgba(0,0,0,.10)}
+.msg.user{width:fit-content;background:var(--user);color:var(--on-user);border-radius:16px 16px 16px 4px;margin-right:auto;padding:6px 16px;font-weight:700}
+.topic,.chip{--h:205}
+[data-t=service]{--h:150} [data-t=courts]{--h:262} [data-t=inquiry]{--h:352} [data-t=security]{--h:28}
+[data-t=police]{--h:212} [data-t=economy]{--h:42} [data-t=religion]{--h:286} [data-t=education]{--h:174} [data-t=identity]{--h:330}
+.msg .topic{--tc:hsl(var(--h) 58% 30%);--tb:hsl(var(--h) 75% 90%);display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--tc);background:var(--tb);border-radius:999px;padding:2px 11px;margin-bottom:8px}
+.msg h3{margin:0 0 6px;font-size:18px;font-weight:800;line-height:1.3;letter-spacing:-.012em;color:var(--ink)}
+.msg p{margin:0 0 6px}
+.msg .small{font-size:14px;color:var(--muted)}
+
+/* אזור התשובות, דבוק לתחתית */
+.dock{position:fixed;bottom:0;left:0;right:0;background:color-mix(in srgb,var(--card) 78%,transparent);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding:12px 0 calc(14px + env(safe-area-inset-bottom))}
+.dock .wrap{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.answers{display:flex;gap:8px;width:100%}
+/* שאלות עמדה: שלוש תשובות ארוכות, אחת מתחת לשנייה */
+.answers.stack{flex-direction:column}
+.answers.stack .btn{flex:none;width:100%;font-size:16px;padding:11px 14px;line-height:1.35}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--soft-line);background:var(--card);color:var(--ink);border-radius:14px;padding:10px 20px;font-weight:700;min-width:96px;min-height:44px;transition:transform .5s var(--spring),background-color .2s ease,border-color .2s ease,box-shadow .2s ease,color .45s ease}
+.btn:active,.chip:active{transform:scale(.96);transition-duration:.08s,.2s,.2s,.2s}
+.btn.primary{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 82%,#fff),var(--accent));border-color:var(--accent);color:var(--on-accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
+.btn.primary{box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 8px 18px -9px color-mix(in srgb,var(--accent) 75%,transparent)}
+.btn.primary:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 2px 6px -3px color-mix(in srgb,var(--accent) 75%,transparent)}
+.btn.ans{flex:1;border-color:var(--accent);color:var(--accent);font-size:17px;padding:12px 0}
+.btn.soft{flex:.8;color:var(--muted);font-weight:600;padding:12px 0}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted);font-weight:600}
+.btn:disabled{opacity:.45;cursor:default}
+/* טבעת מיקוד ברורה למי שמנווט במקלדת */
+.btn:focus-visible,.chip:focus-visible,summary:focus-visible{outline:2.5px solid var(--accent-2);outline-offset:3px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%}
+.chip{transition:transform .5s var(--spring),background-color .2s ease,border-color .2s ease,color .45s ease;border:1.5px solid var(--soft-line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:15px;min-height:40px}
+.chip{display:inline-flex;align-items:center;gap:8px}
+.chip::before{content:"";width:9px;height:9px;border-radius:50%;flex:none;background:hsl(var(--h) 65% 48%)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.chip[aria-pressed="true"]::before{background:hsl(var(--h) 85% 72%)}
+/* נושא שנבחר "קופץ" קפיצה קטנה, כדי שיהיה ברור שהלחיצה נקלטה */
+.chip.pop{animation:chippop .5s var(--spring)}
+@keyframes chippop{from{transform:scale(.9)}to{transform:none}}
+/* הדגשה כשהעכבר עובר על כפתור. רק במכשירים עם עכבר, כדי שבטלפון ההדגשה לא "תיתקע" אחרי לחיצה */
+@media (hover: hover){
+  .btn:not(:disabled):hover,.chip:not(:disabled):not([aria-pressed="true"]):hover{background:var(--accent-soft);border-color:var(--accent-2)}
+  .btn.ghost:hover{color:var(--accent)}
+  .btn.primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+}
+
+/* תוצאות */
+.results{padding:16px 0 60px}
+.res-head{text-align:center;margin:8px 0 4px}
+.res-head .small{font-size:14px;color:var(--muted)}
+.results h2{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin:2px 0 4px}
+.bar-top{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0}
+.note{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent-2) 22%,transparent);border-inline-start:4px solid var(--accent-2);color:var(--ink);border-radius:14px;padding:10px 14px;font-size:15px;margin:12px 0}
+.group{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 16px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px -12px rgba(0,0,0,.12)}
+.group.lead{background:linear-gradient(180deg,color-mix(in srgb,var(--warm) 11%,var(--card)),var(--card) 55%);border:2px solid var(--accent-2);box-shadow:0 0 0 5px color-mix(in srgb,var(--accent-2) 12%,transparent),0 14px 34px -14px color-mix(in srgb,var(--accent-2) 55%,transparent)}
+.group-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:2px}
+/* תג דירוג עגול. במקום הראשון: ענבר חם */
+.rankno{display:grid;place-items:center;min-width:28px;height:28px;border-radius:50%;font-size:14px;font-weight:800;color:var(--accent);background:var(--accent-soft);font-variant-numeric:tabular-nums}
+.group.lead .rankno{color:var(--warm-ink);background:linear-gradient(135deg,var(--warm),#f3c27a);box-shadow:0 4px 10px -4px color-mix(in srgb,var(--warm) 85%,transparent)}
+.pct{font-size:30px;font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--accent);font-variant-numeric:tabular-nums}
+.group.lead .pct{font-size:36px}
+.tie{font-size:13px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:1px 10px}
+.party{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+.group-head + .party,.cluster-note + .party{border-top:0;margin-top:6px;padding-top:0}
+.cluster-note{margin:4px 0 0}
+.stmtline{font-size:14px;color:var(--accent);font-weight:600;margin-top:4px}
+.newbox h3{font-size:18px;margin:0 0 2px}
+.newbox .small{font-size:14px;color:var(--muted);margin:0}
+.party-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pname{display:inline-block;font-weight:800;font-size:18px;letter-spacing:-.01em}
+/* כשחושפים או מסתירים שמות, כל שם "מתהפך" */
+.pname.flip{animation:flip .5s cubic-bezier(.22,1,.36,1) backwards}
+@keyframes flip{from{transform:perspective(500px) rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
+.based{font-size:14px;color:var(--muted);font-weight:600;margin-top:6px}
+.meter{height:10px;border-radius:99px;background:var(--track);overflow:hidden;margin:8px 0 2px}
+.meter i{display:block;height:100%;background:linear-gradient(to left,var(--accent-2),var(--teal));border-radius:99px;transition:width .8s var(--ease)}
+.pnote{font-size:13px;color:var(--muted)}
+.dq{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:8px 0;font-size:15px}
+.dq .t{font-weight:600}
+.dq .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;font-size:14px}
+.dq .mark{font-weight:800}
+.dq .mark.same{color:var(--ok)} .dq .mark.diff{color:var(--bad)} .dq .mark.skip{color:var(--muted)}
+.dq .counts{font-size:13px;color:var(--muted)}
+.unscored{margin-top:20px}
+.unscored h3{font-size:18px;margin:0 0 6px}
+.unscored li{margin:4px 0}
+details.how{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 16px;margin:16px 0}
+details.how summary{cursor:pointer;font-weight:700}
+details.how li{margin:4px 0}
+/* חץ קטן ליד "פירוט": מסתובב כשפותחים, כדי לרמוז שיש עוד תוכן */
+details.how summary{list-style:none}
+details.how summary::-webkit-details-marker{display:none}
+details.how summary::after{content:"";display:inline-block;width:.5em;height:.5em;margin-inline-start:.55em;border-inline-end:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-.15em) rotate(45deg);transition:transform .4s var(--spring);opacity:.7}
+details[open].how > summary::after{transform:translateY(.05em) rotate(-135deg)}
+/* ההסבר מתחת לשאלת הצבעה: מקופל כברירת מחדל, כדי שהכרטיס בטלפון לא יהיה עמוס. שורה קלה עם חץ, בלי קופסה */
+details.how.explain{background:none;border:0;border-radius:0;padding:0;margin:0}
+details.how.explain summary{display:inline-flex;align-items:center;min-height:44px;font-size:15px;font-weight:600;color:var(--accent);-webkit-user-select:none;user-select:none}
+details.how.explain p{margin:0 0 8px}
+/* החץ: למטה כשסגור, למעלה כשפתוח */
+details.how.explain summary::after{border:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-.15em) rotate(45deg)}
+details[open].how.explain > summary::after{transform:translateY(.15em) rotate(-135deg)}
+footer{font-size:14px;color:var(--muted);margin:24px 0}
+
+/* כשהמכשיר עובר בין מצב בהיר לכהה, הצבעים מתחלפים בהדרגה ולא בבת אחת (שינוי פתאומי של בהירות מעייף את העין) */
+body,.top,.dock,.msg,.group,details.how,.dq,.note{transition:background-color .45s ease,color .45s ease,border-color .45s ease}
+/* כרטיס שאלה שאפשר להחליק: ימינה = בעד, שמאלה = נגד. גלילה אנכית נשארת רגילה */
+body{overflow-x:clip}
+.msg.swipeable{position:relative;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none}
+.msg.swipeable.dragging{cursor:grabbing;will-change:transform}
+.swipe-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:inherit;pointer-events:none;
+  background:color-mix(in srgb,var(--accent) 90%,transparent);color:var(--on-accent);font-size:24px;font-weight:800;letter-spacing:-.01em;opacity:0}
+.swipe-hint{margin-top:8px}
+/* בדרך לתוצאות, השיחה והכפתורים מתעממים לפני שהתוצאות עולות */
+.leaving{opacity:0;transition:opacity .22s ease}
+/* "פירוט" נפתח ונסגר בגלילה חלקה. בדפדפן שלא תומך בזה, הוא פשוט ימשיך להיפתח בבת אחת */
+@supports selector(::details-content){
+  details.how{interpolate-size:allow-keywords}
+  details.how::details-content{height:0;overflow:clip;opacity:0;transition:height .5s var(--ease),opacity .35s ease,content-visibility .5s allow-discrete}
+  details[open].how::details-content{height:auto;opacity:1}
+}
+/* כפתור "פירוט" בכרטיס, והחלון שעולה ממנו מלמטה */
+.detail-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:none;color:var(--accent);font-size:15px;font-weight:600;margin-top:2px}
+.chev{display:inline-block;width:.5em;height:.5em;border-inline-end:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(135deg);opacity:.7}
+.sheet-scrim{position:fixed;inset:0;z-index:20;background:rgba(8,12,16,.46);opacity:0}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;margin:0 auto;max-width:720px;height:88vh;height:min(88dvh,820px);display:flex;flex-direction:column;
+  border-radius:26px 26px 0 0;background:color-mix(in srgb,var(--card) 90%,transparent);-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);
+  border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-bottom:0;box-shadow:0 -12px 44px -10px rgba(0,0,0,.30);will-change:transform}
+.sheet[hidden],.sheet-scrim[hidden]{display:none}
+/* כשמושכים את החלון מעט למעלה, התחתית לא נפתחת לרווח ריק */
+.sheet::after{content:"";position:absolute;left:0;right:0;top:100%;height:140px;background:var(--card)}
+.sheet-head{flex:none;padding:8px 16px 8px;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+.sheet-head.dragging{cursor:grabbing}
+.sheet-grab{width:42px;height:5px;border-radius:99px;background:var(--soft-line);margin:0 auto 10px}
+.sheet-bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sheet-title{margin:0;font-size:20px;font-weight:800;letter-spacing:-.015em;line-height:1.25}
+.sheet-close{flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;border:0;background:var(--accent-soft);color:var(--accent);padding:0}
+.sheet-body{flex:1;overflow:auto;overscroll-behavior:contain;padding:4px 16px calc(28px + env(safe-area-inset-bottom));outline:none}
+.sheet-body h4{font-size:15px;margin:18px 0 4px}
+html.sheet-open{overflow:hidden}
+/* בדף התוצאות כל חלק עולה מעט מלמטה, אחד אחרי השני */
+.rise{animation:rise .8s var(--ease) backwards}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+/* מי שביקש במכשיר "פחות תנועה" לא יראה אנימציות */
+@media (prefers-reduced-motion: reduce){
+  .msg.enter,.dock .wrap.enter,.pname.flip{animation:none}
+  .pbar i,.meter i{transition:none}
+  .btn,.chip{transition:background-color .2s ease,border-color .2s ease}
+  .chip.pop{animation:none}
+  .rise{animation:none}
+  details.how::details-content{transition:none}
+  details.how summary::after{transition:none}
+  .btn:active,.chip:active{transform:none}
+}
+/* מי שביקש "פחות שקיפות": משטחים מלאים בלי טשטוש */
+@media (prefers-reduced-transparency: reduce){
+  .top,.dock,.sheet{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+/* מי שביקש ניגודיות גבוהה: קווים ברורים יותר */
+@media (prefers-contrast: more){
+  :root{--line:#8a8a8a;--soft-line:#6f6f6f}
+}
+
+body.blind .real{display:none} body:not(.blind) .blindtxt{display:none}
