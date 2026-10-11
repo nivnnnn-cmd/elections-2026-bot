@@ -156,14 +156,14 @@ details.how li{margin:4px 0}
 details.how summary{list-style:none}
 details.how summary::-webkit-details-marker{display:none}
 details.how summary::after{content:"";display:inline-block;width:.5em;height:.5em;margin-inline-start:.55em;border-inline-end:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-.15em) rotate(45deg);transition:transform .4s var(--spring);opacity:.7}
-details[open].how > summary::after{transform:translateY(.05em) rotate(-135deg)}
+details[open].how:not(.closing) > summary::after{transform:translateY(.05em) rotate(-135deg)}
 /* ההסבר מתחת לשאלת הצבעה: מקופל כברירת מחדל, כדי שהכרטיס בטלפון לא יהיה עמוס. שורה קלה עם חץ, בלי קופסה */
 details.how.explain{background:none;border:0;border-radius:0;padding:0;margin:0}
 details.how.explain summary{display:inline-flex;align-items:center;min-height:44px;font-size:15px;font-weight:600;color:var(--accent);-webkit-user-select:none;user-select:none}
 details.how.explain p{margin:0 0 8px}
 /* החץ: למטה כשסגור, למעלה כשפתוח */
 details.how.explain summary::after{border:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-.15em) rotate(45deg)}
-details[open].how.explain > summary::after{transform:translateY(.15em) rotate(-135deg)}
+details[open].how.explain:not(.closing) > summary::after{transform:translateY(.15em) rotate(-135deg)}
 footer{font-size:14px;color:var(--muted);margin:24px 0}
 
 /* כשהמכשיר עובר בין מצב בהיר לכהה, הצבעים מתחלפים בהדרגה ולא בבת אחת (שינוי פתאומי של בהירות מעייף את העין) */
@@ -177,12 +177,8 @@ body{overflow-x:clip}
 .swipe-hint{margin-top:8px}
 /* בדרך לתוצאות, השיחה והכפתורים מתעממים לפני שהתוצאות עולות */
 .leaving{opacity:0;transition:opacity .22s ease}
-/* "פירוט" נפתח ונסגר בגלילה חלקה. בדפדפן שלא תומך בזה, הוא פשוט ימשיך להיפתח בבת אחת */
-@supports selector(::details-content){
-  details.how{interpolate-size:allow-keywords}
-  details.how::details-content{height:0;overflow:clip;opacity:0;transition:height .5s var(--ease),opacity .35s ease,content-visibility .5s allow-discrete}
-  details[open].how::details-content{height:auto;opacity:1}
-}
+/* פתיחה וסגירה של ההסבר נעשות ב-app.js. כאן רק מסתירים את מה שחורג מהגובה בזמן האנימציה */
+details.how > .dbody{overflow:clip;display:flow-root}
 /* כפתור "פירוט" בכרטיס, והחלון שעולה ממנו מלמטה */
 .detail-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:none;color:var(--accent);font-size:15px;font-weight:600;margin-top:2px}
 .chev{display:inline-block;width:.5em;height:.5em;border-inline-end:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(135deg);opacity:.7}
@@ -212,7 +208,6 @@ html.sheet-open{overflow:hidden}
   .btn,.chip{transition:background-color .2s ease,border-color .2s ease}
   .chip.pop{animation:none}
   .rise{animation:none}
-  details.how::details-content{transition:none}
   details.how summary::after{transition:none}
   .btn:active,.chip:active{transform:none}
 }

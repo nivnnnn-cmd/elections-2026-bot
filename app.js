@@ -140,6 +140,30 @@
     const toQuestion = last.offsetTop + last.offsetHeight - (window.innerHeight - dock.offsetHeight - 16);
     window.scrollTo({ top: Math.max(toTop, toQuestion), behavior: reduceMotion() ? 'auto' : 'smooth' });
   }
+  /* פתיחה וסגירה חלקות של "הסבר" ו"איך זה מחושב?". את האנימציה עושים בקוד ולא ב-CSS, כי בחלק מהדפדפנים (בעיקר בטלפון)
+     הסגירה ב-CSS קורית בבת אחת: הדף מתקצר ברגע, והמסך קופץ. כאן הגובה יורד בהדרגה, והדפדפן מזיז את הגלילה יחד איתו */
+  document.addEventListener('click', e => {
+    const sum = e.target.closest('details.how > summary');
+    if (!sum) return;
+    e.preventDefault();
+    const d = sum.parentElement, body = d.querySelector(':scope > .dbody');
+    if (!body) return;
+    const opening = !d.open || d.classList.contains('closing');
+    if (reduceMotion()) { d.classList.remove('closing'); d.open = opening; return; }
+    const from = d.open ? body.getBoundingClientRect().height : 0; // אם לוחצים באמצע אנימציה, ממשיכים מהגובה הנוכחי
+    if (d._anim) d._anim.cancel();
+    d.classList.toggle('closing', !opening);
+    d.open = true;
+    const to = opening ? body.scrollHeight : 0;
+    const anim = d._anim = body.animate(
+      [{ height: from + 'px', opacity: from ? 1 : 0 }, { height: to + 'px', opacity: opening ? 1 : 0 }],
+      { duration: opening ? 420 : 380, easing: 'cubic-bezier(.45,0,.2,1)', fill: 'forwards' });
+    anim.onfinish = () => {
+      if (d._anim !== anim) return;
+      d._anim = null; anim.cancel(); // מחזיר את הגובה לאוטומטי
+      if (!opening) { d.open = false; d.classList.remove('closing'); }
+    };
+  });
   /* כשפותחים את ההסבר מתחת לשאלה, גוללים מעט כדי שהוא לא יוסתר מאחורי הכפתורים שלמטה.
      אבל לא יותר מדי: ראש הכרטיס נשאר תמיד מתחת לפס העליון */
   chat.addEventListener('toggle', e => {
@@ -205,7 +229,7 @@
     // בכוונה בלי "מה יצא בכנסת": התוצאה רומזת מי הצביע בעד ומי נגד. היא מופיעה רק בפירוט שבדף התוצאות
     bot(`<span class="topic" data-t="${q.topic}">${ICON[q.topic] || ''}${esc(topicTitle(q.topic))}</span>
          <h3>${esc(q.title)}</h3>
-         <details class="how explain"><summary>הסבר</summary><p>${esc(q.explain)}</p></details>${swipeHintShown ? '' : '<p class="small swipe-hint">אפשר גם להחליק את הכרטיס: ימינה = בעד, שמאלה = נגד.</p>'}`);
+         <details class="how explain"><summary>הסבר</summary><div class="dbody"><p>${esc(q.explain)}</p></div></details>${swipeHintShown ? '' : '<p class="small swipe-hint">אפשר גם להחליק את הכרטיס: ימינה = בעד, שמאלה = נגד.</p>'}`);
     swipeHintShown = true; // הרמז מופיע רק בשאלה הראשונה
     render();
     markSwipeable(chat.lastElementChild);
@@ -521,7 +545,7 @@
   }
 
   function howHtml() {
-    return `<details class="how"><summary>איך זה מחושב?</summary><ol>
+    return `<details class="how"><summary>איך זה מחושב?</summary><div class="dbody"><ol>
       <li><b>העמדה של כל מפלגה בכל הצבעה:</b> הצד שבחר רוב חברי הכנסת שלה שהצביעו. מפלגה שהיא איחוד: סופרים את כל המרכיבים יחד. אם רוב חברי המפלגה לא הצביעו (או שהיה שוויון), המפלגה "לא בחרה צד".</li>
       <li><b>ההשוואה:</b> בכל הצבעה שענית עליה: אם המפלגה באותו צד כמוך, היא מקבלת נקודה. אם בצד השני, 0. אם היא לא בחרה צד, חצי נקודה. "לא יודע/ת" שלך לא נספר.</li>
       <li><b>למה חצי נקודה?</b> כדי שכל המפלגות יימדדו על אותן הצבעות בדיוק. בלי זה, מפלגה שלא הצביעה ברוב הנושאים יכלה לקבל 100% רק בגלל כמה הצבעות בודדות שבהן הסכימה איתך.</li>
@@ -536,7 +560,7 @@
       <li><b>מפלגה חדשה שמועמדים שלה כיהנו בכנסת ה-25 בסיעות אחרות:</b> נספרות ההצבעות של המועמדים האלה, רק בימים שבהם היו חברי כנסת. כרגע זה חל רק על מפלגה אחת, וליד התוצאה שלה כתוב על כמה אנשים היא מבוססת.</li>
       <li><b>מפלגה חדשה</b> (שלא הייתה בכנסת ה-25) לא מקבלת אחוז, כי אין לה הצבעות.${ST.length ? ' היא מופיעה בנפרד, עם מה שהיא אומרת בשאלות העמדה.' : ''}</li>
       <li><b>בלי בינה מלאכותית ובלי תיקונים ידניים.</b> אותן תשובות נותנות תמיד אותה תוצאה.</li>
-    </ol></details>`;
+    </ol></div></details>`;
   }
 
   /* רטט קצרצר בטלפון, רק ברגעים משמעותיים (תשובה, ומעבר לתוצאות). בלי רטט למי שביקש "פחות תנועה".
